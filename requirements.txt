@@ -1,0 +1,15 @@
+matplotlib
+numpy
+Pillow
+pydicom
+scikit_learn
+scipy
+scikit-image
+tomni
+torch
+torchmetrics
+torchvision
+tqdm
+pandas
+openpyxl
+pytest

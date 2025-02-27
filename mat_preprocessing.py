@@ -1,4 +1,3 @@
-#TODO: Determine why this processing of the file is important <---> what is it doing? 
 """
 MAT Preprocessing for Cardiac MRI Analysis
 
@@ -81,7 +80,7 @@ def parse_args():
         '-i', '--input-dir',
         type=str,
         required=False,
-        default='./data/Matlab',
+        default='./data/Matlab/', #IDEA[0]: Syntax, I learned to better specify explicitly a directory  
         help='Directory containing patient MATLAB (.mat) files with LGE/PSIR/MAG sequences'
     )
     
@@ -89,10 +88,16 @@ def parse_args():
         '-o', '--output-dir',
         type=str,
         required=False,
-        default='./data/cropped_myo',
+        default='./data/preprocesssed_files/',
         help='Directory where processed numpy files will be saved'
     )
-    
+    parser.add_argument(
+        '-s', '--size', 
+        type=int, 
+        required=False,
+        default=128, 
+        help='Dimensions of the resulting mat file images'
+    )
     parser.add_argument(
         '--save-json',
         action='store_true',
@@ -103,13 +108,17 @@ def parse_args():
 
 args = parse_args()
 
+size = args.size
 # ##### This snippet gets the list of .mat files under each subject
 
-path= './data/Matlab/' #TODO: Refactor this to get into command line
+
+path= args.input_dir #args.input_dir#TODO: Refactor this to get into command line
+
+import os
 
 subjects= os.listdir(path)
 for si in range(len(subjects)):
-    new_path= path+subjects[si]
+    new_path= os.path.join(path,subjects[si]) #EDIT[0]: Changed this from path+subjects for flexible parsing
     files= os.listdir(new_path)
 print('Total number of subjects: ', len(subjects))
 print(files)
@@ -129,7 +138,7 @@ def std_img(tens):
     return t_
 
 # TODO: Include option to change the image size
-def resize_volume(img, ex=64):              ### THIS IS CURRENTLY OPERATING ON 2D DATA, 'ex' IS THE EXPECTED SIZE
+def resize_volume(img, ex=size):              ### THIS IS CURRENTLY OPERATING ON 2D DATA, 'ex' IS THE EXPECTED SIZE
     current_depth = img.shape[0]
     current_width = img.shape[1]            
 

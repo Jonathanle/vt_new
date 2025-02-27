@@ -1,0 +1,6 @@
+data/
+__pycache__/
+unet_att_focal_dice350.pt
+mat_preprocessing.ipynb
+inference.ipynb
+inference_sample.json
