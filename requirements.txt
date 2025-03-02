@@ -13,3 +13,4 @@ tqdm
 pandas
 openpyxl
 pytest
+seaborn

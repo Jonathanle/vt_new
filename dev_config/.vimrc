@@ -1,26 +1,24 @@
 " Plugin Manager from Vim
 
-set rtp+=~/.vim/bundle/Vundle.vim
-call vundle#begin()
-
-Plugin 'VundleVim/Vundle.vim'
-
-Plugin 'jupyter-vim/jupyter-vim'
-
-
-set nocompatible              " be iMproved, required
-filetype off                  " required
-filetype plugin indent on    " required
-
-call vundle#end()            " required
-filetype plugin indent on    " required
-
+"
+"set rtp+=~/.vim/bundle/Vundle.vim
+"call vundle#begin()
+"
+"Plugin 'VundleVim/Vundle.vim'
+"
+"Plugin 'jupyter-vim/jupyter-vim'
+"
+"
+"set nocompatible              " be iMproved, required
+"filetype off                  " required
+"filetype plugin indent on    " required
+"
+"call vundle#end()            " required
+"filetype plugin indent on    " required
+"
 " End Vundle
 
-
-
 set foldmethod=manual
-
 
 " made so that I can create the directory *if* it does not exist
 if !isdirectory($HOME.'/.vim/view')

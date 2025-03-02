@@ -32,11 +32,9 @@ import seaborn as sns
 from pathlib import Path
 import traceback
 
-#TODO: Replace the default directories with config.py defined local directories
+ROOT_PATH = os.environ.get('ROOT_PATH')
+UNPROCESSED_DATA_DIR = os.environ.get('UNPROCESSED_DATA_DIR')
 
-
-
-# Set up argument parser
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Analyze cardiac MRI preprocessing pipeline data structures',
@@ -46,7 +44,7 @@ def parse_args():
     parser.add_argument(
         '--input-dir',
         type=str,
-        default='./data/Matlab/', #DF - how to have a consitent 'root' directory that I can refrence while not being dependent
+        default= UNPROCESSED_DATA_DIR,
         help='Directory containing patient MATLAB (.mat) files'
     )
     
@@ -717,4 +715,18 @@ def generate_statistical_analysis(npy_info, report_dir):
                 
                 # Create zeros percentage plot
                 plt.figure(figsize=(8, 6))
-                sns.histplot(stats)
+                sns.histplot(stats[prefix]['zeros'], kde=True)
+                plt.title(f"{prefix} - Percentage of Zero Values")
+                plt.xlabel("Percentage of Zeros (%)")
+                plt.ylabel("Frequency")
+                plt.tight_layout()
+                plt.savefig(os.path.join(vis_dir, f"{prefix}_zeros.png"), dpi=150)
+                plt.close()
+                
+                # Add zeros visualization to summary
+                summary[prefix]['zeros_visualization'] = os.path.join(vis_dir, f"{prefix}_zeros.png")
+            except Exception as e:
+                print(f"Error creating statistical visualizations for {prefix}: {e}")
+                traceback.print_exc()
+
+

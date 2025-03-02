@@ -25,9 +25,9 @@ Inputs:
  - enhancement: Data showing areas of enhancement (scarring)
 
 Outputs:
-- Processed numpy files (saved to './cropped_myo_lge_testing/' by default)
+- Processed numpy files (saved to './data/preprocessed_files/' by default)
  Format:
- ./cropped_myo_lge_testing/
+ ./preprocessed_files/
  ├── patient_id_1/
  │   ├── raw_0.npy        # Slice 0: Myocardium-only masked image
  │   ├── cine_0.npy       # Slice 0: Cropped raw image
@@ -66,21 +66,27 @@ import torch
 
 import argparse
 
-# TODO: Implemnt a CLI that allows preprocessing + practice no need to memorize just verify for now -> benefit 1 can i do it slowly with full access via focumentation? --> it feels much easier to then know the language internally that is very useful with reference to my capaabilities --> think here there is * a lot* I must truely prioritize what languuage is impt to internalize - espeically with the configurations
-# obviously learning how to do it is the most important - this is becaause when i dont have claude i need to learn to do it# if it ends up failing - I am the fallback --> this allows in either situation to create this idea of certainty 
-# Ex - parse args is not important for me to know how to do within a fast time frame, it is a fast functional library 
-# but there are sitguations where I may need to know how to use it. 
+
+
+
+root_directory = os.environ.get('DATA_DIR')
+
+input_directory =  os.environ.get('UNPROCESSED_DATA_DIR')#os.path.join(root_directory, 'Matlab')
+output_directory = os.environ.get('PROCESSED_DATA_DIR')#os.path.join(root_directory, 'preprocessed_files')
+
+
+# IDEA[1]: Parse Args is something I dont need to do and is in this context a 'calculator task'
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Process cardiac MRI MATLAB files to extract myocardium regions and standardize images',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    
+    # TODO[0]: Change dependency for preprocessing file to be strictly within a specific file directory    
     parser.add_argument(
         '-i', '--input-dir',
         type=str,
         required=False,
-        default='./data/Matlab/', #IDEA[0]: Syntax, I learned to better specify explicitly a directory  
+        default=input_directory, #IDEA[0]: Syntax, I learned to better specify explicitly a directory (think directory/)
         help='Directory containing patient MATLAB (.mat) files with LGE/PSIR/MAG sequences'
     )
     
@@ -88,7 +94,7 @@ def parse_args():
         '-o', '--output-dir',
         type=str,
         required=False,
-        default='./data/preprocesssed_files/',
+        default=output_directory,
         help='Directory where processed numpy files will be saved'
     )
     parser.add_argument(
@@ -98,12 +104,7 @@ def parse_args():
         default=128, 
         help='Dimensions of the resulting mat file images'
     )
-    parser.add_argument(
-        '--save-json',
-        action='store_true',
-        help='Save all processed data as a combined JSON file'
-    )
-    
+   
     return parser.parse_args()
 
 args = parse_args()
@@ -113,8 +114,7 @@ size = args.size
 
 
 path= args.input_dir #args.input_dir#TODO: Refactor this to get into command line
-
-import os
+output_dir = args.output_dir
 
 subjects= os.listdir(path)
 for si in range(len(subjects)):
@@ -160,11 +160,11 @@ yes_save = 1
 
 
 def saver(si):
-    saving_folder = './cropped_myo_lge_testing/'                                                            ### RENAME BASED ON FOLDER TO BE SAVED IN
+    saving_folder = output_dir 
     os.makedirs(saving_folder, exist_ok=True)
     if yes_save:
         try:
-            os.mkdir(saving_folder +subjects[si])
+            os.mkdir(os.path.join(saving_folder, subjects[si]))
         except:
             print('error creating folder; folder already exists: ', os.path.exists(saving_folder +subjects[si]))
 
@@ -250,17 +250,19 @@ def saver(si):
 
                     if yes_save:
                         
-                        save_path= saving_folder +subjects[si] + '/raw_'+ str(slice_no) + '.npy'
+                        save_path= os.path.join(saving_folder, subjects[si], 'raw_'+ str(slice_no) + '.npy') # DF: why /raw is bad in text processing
+
+
                         im2[np.isnan(im2)]=0
                         np.save(save_path, im2)
 
-                        save_path= saving_folder +subjects[si] + '/cine_'+ str(slice_no) + '.npy'
+                        save_path= os.path.join(saving_folder, subjects[si], 'cine_'+ str(slice_no) + '.npy')
                         np.save(save_path, imc)
 
-                        save_path= saving_folder +subjects[si] + '/cine_whole_'+ str(slice_no) + '.npy'
+                        save_path= os.path.join(saving_folder, subjects[si], 'cine_whole_'+ str(slice_no) + '.npy')
                         np.save(save_path, imc_full)
 
-                        save_path=saving_folder +subjects[si] + '/lge_'+ str(slice_no) + '.npy'
+                        save_path= os.path.join(saving_folder, subjects[si], 'lge_'+ str(slice_no) + '.npy')
                         sc2[np.isnan(sc2)]=0
                         np.save(save_path, sc2)
 
@@ -273,7 +275,7 @@ for si in range(len(subjects)):
 # ##### Intermediate .npy files used for train-test split, not for directly storing as JSON
 
 
-key_dir = './cropped_myo_lge_testing/'
+key_dir = output_dir 
 
 raw_=[]
 lge_=[]
