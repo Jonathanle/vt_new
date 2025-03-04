@@ -13,6 +13,13 @@ Usage:
 Environment Variables:
     PROCESSED_DATA_DIR: Directory containing processed MRI data
 """
+"""
+The cine slice is wrong - iut should be that - what cuses this kdin of error?
+
+"""
+
+# TODO: Get algorithm in state where I can visualize LGE Output from the model as ground truth
+
 
 import os
 import sys
@@ -140,7 +147,41 @@ def get_patient_directories(data_dir, patient_ids=None):
     
     return patient_dirs
 
-
+def get_files_by_regex(patient_dir, img_type):
+    """
+    Find files that match a specific image type using regex patterns.
+    
+    Args:
+        patient_dir: Path to patient directory (pathlib.Path object)
+        img_type: Type of image to match ("raw", "cine", "cine_whole", etc.)
+        
+    Returns:
+        List of file paths that match the pattern for the specified image type
+    """
+    import re
+    # Define regex patterns for each image type
+    patterns = {
+        "raw": r"^raw_\d+\.npy$",
+        "cine": r"^cine_\d+\.npy$",
+        "cine_whole": r"^cine_whole_\d+\.npy$",
+        "lge": r"^lge_\d+\.npy$"
+    }
+    
+    # Make sure the requested image type has a defined pattern
+    if img_type not in patterns:
+        print(f"Warning: No pattern defined for image type '{img_type}'")
+        return []
+    
+    # Get the pattern for this image type
+    pattern = re.compile(patterns[img_type])
+    
+    # Find all files in the directory
+    all_files = list(patient_dir.iterdir())
+    
+    # Filter files that match the pattern
+    matching_files = [f for f in all_files if f.is_file() and pattern.match(f.name)]
+    
+    return matching_files
 def find_slice_files(patient_dir, image_types):
     """
     Find and organize slice files for a patient by type and slice number.
@@ -153,13 +194,16 @@ def find_slice_files(patient_dir, image_types):
         Dictionary mapping slice numbers to dictionaries of image types and file paths
     """
     slice_files = {}
-    
+
+
     # Process each image type
     for img_type in image_types:
-        # Find all files of this type
-        pattern = f"{img_type}_*.npy"
-        files = list(patient_dir.glob(pattern))
-        
+        #pattern = f"{img_type}_*.npy"  # this pattern is to global and liberal i need to find this
+        #files = list(patient_dir.glob(pattern))
+
+        files = get_files_by_regex(patient_dir, img_type)
+
+
         for file_path in files:
             # Extract slice number from filename (e.g., raw_5.npy -> 5)
             try:
@@ -211,6 +255,7 @@ def load_and_validate_slice(slice_data, image_types):
             try:
                 img_data = np.load(slice_data[img_type])
                 images[img_type] = img_data
+
             except (IOError, ValueError) as e:
                 print(f"Error loading {img_type} image: {e}")
     
@@ -230,6 +275,10 @@ def create_visualization(patient_dirs, image_types, figsize=(12, 6), dpi=100):
     # Find all patients' slice files
     all_patients_data = {}
     for patient_id, patient_dir in patient_dirs.items():
+
+
+
+
         try:
             slice_files = find_slice_files(patient_dir, image_types)
             if slice_files:
@@ -273,11 +322,16 @@ def create_visualization(patient_dirs, image_types, figsize=(12, 6), dpi=100):
         try:
             slice_data = all_patients_data[patient_id][slice_num]
             images = load_and_validate_slice(slice_data, image_types)
-            
-            # Update each axis with new image
+           
+
+
+            # Update each axis with new image Key place or uuncertainty inside? 
             for i, img_type in enumerate(image_types):
                 if img_type in images:
-                    img_data = images[img_type]
+                    img_data = images[img_type] # key focus what happens image type for patient file? TODO: Examine via breakpiont
+                    
+                    
+
                     img_obj = axes[i].imshow(img_data, cmap='gray')
                     axes[i].set_title(f"{img_type} (Slice {slice_num})")
                     axes[i].axis('off')

@@ -25,3 +25,8 @@
 
 #Objectives
 - Get verify through testing the behavior + document its behavior of testing, using claude to test and develop
+
+
+## Application Specific Problems needed to run 
+
+`xhost +local:` --> i need to run this every time 
