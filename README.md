@@ -29,4 +29,4 @@
 
 ## Application Specific Problems needed to run 
 
-`xhost +local:` --> i need to run this every time 
+`xhost +local:` --> i need to run this every time on locall - TODO: how can i auto run this the best? basahrdc seems 

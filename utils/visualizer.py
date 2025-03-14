@@ -59,7 +59,7 @@ def parse_arguments():
         type=str,
         nargs="+",
         choices=["raw", "cine", "cine_whole"],
-        default=["raw", "cine", "cine_whole"],
+        default=["raw", "cine", "cine_whole", "lge"],
         help="Types of images to display"
     )
     
@@ -276,9 +276,6 @@ def create_visualization(patient_dirs, image_types, figsize=(12, 6), dpi=100):
     all_patients_data = {}
     for patient_id, patient_dir in patient_dirs.items():
 
-
-
-
         try:
             slice_files = find_slice_files(patient_dir, image_types)
             if slice_files:
@@ -291,7 +288,8 @@ def create_visualization(patient_dirs, image_types, figsize=(12, 6), dpi=100):
     if not all_patients_data:
         print("Error: No valid data found for any patient")
         return
-    
+
+
     # Setup the figure and axes for visualization
     num_cols = len(image_types)
     fig, axes = plt.subplots(1, num_cols, figsize=figsize, dpi=dpi)
@@ -333,7 +331,14 @@ def create_visualization(patient_dirs, image_types, figsize=(12, 6), dpi=100):
                     
 
                     img_obj = axes[i].imshow(img_data, cmap='gray')
-                    axes[i].set_title(f"{img_type} (Slice {slice_num})")
+
+                    if img_type == 'lge': 
+                        axes[i].set_title(f"{img_type} (ground truth from SwinUnet) (Slice {slice_num})")
+                    else:
+                        axes[i].set_title(f"{img_type} (Slice {slice_num})")
+
+
+
                     axes[i].axis('off')
                 else:
                     axes[i].text(0.5, 0.5, f"No {img_type} data", 
@@ -425,6 +430,9 @@ def create_visualization(patient_dirs, image_types, figsize=(12, 6), dpi=100):
     plt.show()
 
 
+
+
+
 def main():
     """Main function to run the visualization tool."""
     try:
@@ -434,7 +442,8 @@ def main():
         # Get data directory
         data_dir = get_data_directory(args.data_dir)
         print(f"Using data directory: {data_dir}")
-        
+
+
         # Get patient directories
         patient_dirs = get_patient_directories(data_dir, args.patients)
         print(f"Found {len(patient_dirs)} patient directories")

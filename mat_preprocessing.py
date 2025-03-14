@@ -262,9 +262,10 @@ def saver(si):
                         save_path= os.path.join(saving_folder, subjects[si], 'cine_whole_'+ str(slice_no) + '.npy')
                         np.save(save_path, imc_full)
 
-                        save_path= os.path.join(saving_folder, subjects[si], 'lge_'+ str(slice_no) + '.npy')
-                        sc2[np.isnan(sc2)]=0
-                        np.save(save_path, sc2)
+                        # WHYIM: Commented out to emphasize in the output no* lge output, make more consistent 
+                        #save_path= os.path.join(saving_folder, subjects[si], 'lge_'+ str(slice_no) + '.npy')
+                        #sc2[np.isnan(sc2)]=0
+                        #np.save(save_path, sc2)
 
 
 
@@ -274,36 +275,39 @@ for si in range(len(subjects)):
 
 # ##### Intermediate .npy files used for train-test split, not for directly storing as JSON
 
+# Code for loading into JSON
 
-key_dir = output_dir 
-
-raw_=[]
-lge_=[]
-cine_=[]
-cine_whole_=[]
-
-for subject in os.listdir(key_dir):    
-    files= os.listdir(os.path.join(key_dir, subject))
-    for f in files:
-        idx= f[4:list(f).index('.')]
-        if 'raw' in f:
-            raw_.append(np.load(os.path.join(key_dir, subject, f)))
-
-            lge_f = 'lge_'+str(idx)+'.npy'
-            lge_.append(np.load(os.path.join(key_dir, subject, lge_f)))
-
-            lge_f = 'cine_'+str(idx)+'.npy'
-            cine_.append(np.load(os.path.join(key_dir, subject, lge_f)))
-
-            lge_f = 'cine_whole_'+str(idx)+'.npy'
-            cine_whole_.append(resize_volume(np.load(os.path.join(key_dir, subject, lge_f)), ex=224))
-
-raw_ = np.array(raw_)
-lge_= np.array(lge_)
-cine_= np.array(cine_)
-cine_whole_ = np.array(cine_whole_)
-
-raw_.shape, lge_.shape, cine_.shape, cine_whole_.shape
+# WHYIM: commented out because I suspect with 80% belief that it is not relevant for the saving itself only for JSON 
+#
+#key_dir = output_dir 
+#
+#raw_=[]
+#lge_=[]
+#cine_=[]
+#cine_whole_=[]
+#
+#for subject in os.listdir(key_dir):    
+#    files= os.listdir(os.path.join(key_dir, subject))
+#    for f in files:
+#        idx= f[4:list(f).index('.')]
+#        if 'raw' in f:
+#            raw_.append(np.load(os.path.join(key_dir, subject, f)))
+#
+#            lge_f = 'lge_'+str(idx)+'.npy'
+#            lge_.append(np.load(os.path.join(key_dir, subject, lge_f)))
+#
+#            lge_f = 'cine_'+str(idx)+'.npy'
+#            cine_.append(np.load(os.path.join(key_dir, subject, lge_f)))
+#
+#            lge_f = 'cine_whole_'+str(idx)+'.npy'
+#            cine_whole_.append(resize_volume(np.load(os.path.join(key_dir, subject, lge_f)), ex=224))
+#
+#raw_ = np.array(raw_)
+#lge_= np.array(lge_)
+#cine_= np.array(cine_)
+#cine_whole_ = np.array(cine_whole_)
+#
+#raw_.shape, lge_.shape, cine_.shape, cine_whole_.shape
 """
 # ##### Store as JSON
 

@@ -22,8 +22,17 @@ PROCESSED_DATA_DIR=$(DATA_DIR)/preprocessed_files#what if there are extra slashe
 # DF[0]: ensure no space between the files and the '#' this created an extra space which is bad
 
 
+LABELS_FILE=CAD CMRs for UVA.xlsx
+
+
+# Added quotations bcause of non standard spaced filenames of the labels fil
+LABELS_FILEPATH='$(DATA_DIR)/$(LABELS_FILE)'
+
 
 MODEL_DIR=$(CONTAINER_WORKDIR)/models
+
+
+VISUALIZER_DOT_PATH=utils.visualizer
 
 
 # Added the "f" flag to allow graceful failure, and ignoring messages
@@ -35,13 +44,23 @@ pp:
 # TODO: change and refactor this as needed
 openp: 
 	vim mat_preprocessing.py
+
+#visualize_data - standardize the syntax for analyzability 
+run_visualizer:
+	python3 -m $(VISUALIZER_DOT_PATH) 
+
+
+
 test: 
 	$(TEST_LIBRARY)	
-# Docker run target
-# Added X11 socket volume TODO: refactor this
+
+
+enable_x11_forwarding: 
+	xhost +local:
+
+
 #
-#
-docker_run:
+docker_run: enable_x11_forwarding
 	sudo docker run \
 		--gpus $(GPU_FLAG) \
 		-v $(HOST_DIR):$(CONTAINER_WORKDIR) \
@@ -52,6 +71,7 @@ docker_run:
 		-e MODEL_DIR=$(MODEL_DIR) \
 		-e UNPROCESSED_DATA_DIR=$(UNPROCESSED_DATA_DIR)\
 		-e PROCESSED_DATA_DIR=$(PROCESSED_DATA_DIR) \
+		-e LABELS_FILEPATH=$(LABELS_FILEPATH)\
 		-w $(CONTAINER_WORKDIR) \
 		-it $(IMAGE_NAME) $(CMD)
 
