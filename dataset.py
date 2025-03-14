@@ -166,30 +166,140 @@ def organize_patient_data(filepath):
                             patient_data[category] = None
         
         # Add patient data to main dictionary
-        data[patient_id] = patient_data
+        data[int(patient_id)] = patient_data
     
     return data
 def create_label_tensors():
     """
-
+    Assemble dictionaries made into a larger dataset
     """
     outcome_dict = create_outcome(LABELS_FILEPATH)
 
 
-    # TODO: Create a dictionary mapping of patient id --> set of 4 images
+    processed_data_dir = os.environ.get('PROCESSED_DATA_DIR')
+    patient_data = organize_patient_data(processed_data_dir)
 
-    return    
+
+    final_dataset_dict = {}
+
+    for patient_id, label in outcome_dict.items():
+
+        # warning patient_id is a str. 
+        if patient_id not in patient_data: 
+            print(f'Warning: {patient_id} not in processed data skipping')
+            continue
+
+        label = label
+        images = patient_data[patient_id]
     
+        final_dataset_dict[patient_id] = {'label': label, 'images': images}
+    
+
+    return final_dataset_dict
+
 class LGEDataset():
+    """
+    Dataset class that interfaces with a dictionary of cardiac MRI data.
+    
+    Input dataset_dict structure:
+    {
+        patient_id_1: {
+            'label': int (0 or 1),
+            'images': {
+                'cine': np.ndarray (2D, float32/float64), # Kept as numpy array
+                'lge': np.ndarray (2D, float32/float64),
+                'cine_whole': np.ndarray (2D, float32/float64), # Kept as numpy array
+                'raw': np.ndarray (2D, float32/float64)
+            }
+        },
+        patient_id_2: {...},
+        ...
+    }
+    
+    Returns:
+    {
+        'patient_id': str,
+        'label': torch.tensor (shape [], dtype=torch.long),
+        'images': {
+            'cine': np.ndarray (2D, float32/float64), # Original numpy array
+            'lge': torch.tensor (shape [1, H, W], dtype=torch.float32),
+            'cine_whole': np.ndarray (2D, float32/float64), # Original numpy array
+            'raw': torch.tensor (shape [1, H, W], dtype=torch.float32)
+        }
+    }
+    """
+    def __init__(self, dataset_dict): 
+        """
+        Initialize the dataset with a dictionary of patient data.
+        
+        Args:
+            dataset_dict: Dictionary with patient data structured as specified in the class docstring.
+            'cine' and 'cine_whole' are kept as numpy arrays since they won't be used in training.
+        """
+        self.dataset_dict = dataset_dict
+        
+        # Create a mapping from patient ID to index
+        self.patient_ids = list(dataset_dict.keys())
+        self.id_to_idx = {patient_id: idx for idx, patient_id in enumerate(self.patient_ids)}
+        
+        # Convert only necessary numpy arrays to PyTorch tensors
+        for patient_id, data in self.dataset_dict.items():
+            # Convert label to tensor
+            data['label'] = torch.tensor(data['label'], dtype=torch.long)
+           
+            # TODO: Unverified work with this + document with cost the 
+            # I verified this simply using a matplotlib visualize
+            data['images']['myomask'] = data['images']['raw'] > 1e-3
 
-    def __init__(self): 
-
-        return
-
+            # Convert only specified images to tensors with channel dimension
+            for img_type, img_array in data['images'].items():
+                # Skip cine and cine_whole - keep as numpy arrays
+                if img_type in ['cine', 'cine_whole']:
+                    continue
+                    
+                # Add channel dimension if not present
+                if img_array.ndim == 2:
+                    img_array = np.expand_dims(img_array, axis=0)  # [1, H, W]
+                
+                # Convert to float32 tensor
+                data['images'][img_type] = torch.tensor(img_array, dtype=torch.float32)
+    
     def __len__(self):
-        return 0
-
-
+        return len(self.dataset_dict)
+    
     def __getitem__(self, idx): 
-        return 0
+        """
+        Fucntion that retrieves a dataset based on the idx or the dataset
 
+        Uses specifically the datatype to disambiguuate the method for accessing
+        """
+        # Get the patient ID for this index
+        if isinstance(idx, int): 
+            patient_id = self.patient_ids[idx]
+        
+        elif isinstance(idx, str): 
+            patient_id = int(idx)  # use str to then inform of the idness
+        else: 
+            raise Exception("error idx is not an int or str)")
+        
+
+
+        # Get the data for this patient
+        data = self.dataset_dict[patient_id]
+        
+        # Return the data along with the patient ID
+        return {
+            'patient_id': patient_id,
+            'label': data['label'],
+            'images': data['images']
+        }
+
+def main(): 
+
+    dataset_dict = create_label_tensors()
+    dataset = LGEDataset(dataset_dict)
+
+
+
+if __name__ == '__main__':
+    main()

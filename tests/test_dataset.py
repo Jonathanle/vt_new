@@ -1,6 +1,6 @@
 import pytest
 
-from dataset import create_outcome, organize_patient_data
+from dataset import create_outcome, organize_patient_data, create_label_tensors
 import os
 
 
@@ -45,7 +45,7 @@ def test_create_organize_patient_data_correct_shapes(processed_data_dir):
 
     """
 
-    patient_id = '11957' # -> these are specifically str ids not int ids
+    patient_id = 11957 # -> these are specifically str ids not int ids
     
      
     patient_tensor_data = organize_patient_data(processed_data_dir)    
@@ -105,6 +105,57 @@ def test_create_outcome_correct_label(labels_filepath):
     
     for patient_id, ground_truth_outcome in ground_truth_values.items():
         assert outcome[patient_id] == ground_truth_outcome
+
+
+def test_dataset_dict_structure():
+    """
+    TEST SUMMARY:
+    This test validates that our cardiac MRI dataset dictionary has the correct structure:
+    ✓ Dictionary with patient IDs (integers) as keys
+    ✓ Each patient entry contains exactly 'label' and 'images' keys
+    ✓ 'label' is an integer value (0 or 1)
+    ✓ 'images' is a dictionary containing 'cine', 'lge', 'cine_whole', and 'raw' keys
+    ✓ Each image is a 2D numpy array with dtype float32 or float64
+    
+    Full expected structure:
+    {
+        patient_id_1: {
+            'label': int (0 or 1),
+            'images': {
+                'cine': np.ndarray (2D, float32/float64),
+                'lge': np.ndarray (2D, float32/float64),
+                'cine_whole': np.ndarray (2D, float32/float64),
+                'raw': np.ndarray (2D, float32/float64)
+            }
+        },
+        patient_id_2: {...},
+        ...
+    }
+    """
+    dataset_dict = create_label_tensors()
+
+    # Check that dataset_dict is a dictionary
+    assert isinstance(dataset_dict, dict), "dataset_dict must be a dictionary"
+    
+    # Check that there's at least one patient
+    assert len(dataset_dict) > 0, "dataset_dict must contain at least one patient"
+    
+    # For each patient entry
+    for patient_id, patient_data in dataset_dict.items():
+        # Patient ID should be a string
+        assert isinstance(patient_id, int), f"Patient ID {patient_id} must be a int according to the creation "
         
+        # Check patient_data structure
+        assert isinstance(patient_data, dict), f"Data for patient {patient_id} must be a dictionary"
+        assert set(patient_data.keys()) == {'label', 'images'}, f"Patient {patient_id} data must have exactly 'label' and 'images' keys"
+
+
+
+"""
+Other "Tests"  -
+
+Heuristically showed that the myo mask is a raw image by showing the corrrespondence to raww image  via visual confirmation
+
+"""
 
 
