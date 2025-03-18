@@ -8,6 +8,7 @@ import pandas as pd
 import os
 import numpy as np 
 
+#TODO - figure out a way to standardize the slice requirements for having a standard dataset. 
 
 def create_data_tensors(): 
     """
@@ -206,10 +207,10 @@ class LGEDataset():
         patient_id_1: {
             'label': int (0 or 1),
             'images': {
-                'cine': np.ndarray (2D, float32/float64), # Kept as numpy array
-                'lge': np.ndarray (2D, float32/float64),
-                'cine_whole': np.ndarray (2D, float32/float64), # Kept as numpy array
-                'raw': np.ndarray (2D, float32/float64)
+                'cine': np.ndarray (sliceno 2D, float32/float64), # Kept as numpy array
+                'lge': np.ndarray (sliceno 2d, float32/float64),
+                'cine_whole': np.ndarray (slicesno, 2D, float32/float64), # Kept as numpy array
+                'raw': np.ndarray (sliceno 2D, float32/float64)
             }
         },
         patient_id_2: {...},
@@ -222,12 +223,16 @@ class LGEDataset():
         'label': torch.tensor (shape [], dtype=torch.long),
         'images': {
             'cine': np.ndarray (2D, float32/float64), # Original numpy array
-            'lge': torch.tensor (shape [1, H, W], dtype=torch.float32),
+            'lge': torch.tensor (shape [1, slice_no, H, W], dtype=torch.float32),
             'cine_whole': np.ndarray (2D, float32/float64), # Original numpy array
-            'raw': torch.tensor (shape [1, H, W], dtype=torch.float32)
+            'raw': torch.tensor (shape [1, slice_no, H, W], dtype=torch.float32)
+            'myomask': torch.tensor (shape [1, slice_no, H, W], dtype = torch.float32
         }
     }
     """
+    # TODO: EXAMINe what datatype myomask outputs
+
+
     def __init__(self, dataset_dict): 
         """
         Initialize the dataset with a dictionary of patient data.
@@ -257,9 +262,9 @@ class LGEDataset():
                 if img_type in ['cine', 'cine_whole']:
                     continue
                     
-                # Add channel dimension if not present
-                if img_array.ndim == 2:
-                    img_array = np.expand_dims(img_array, axis=0)  # [1, H, W]
+                # Add channel dimension if not present (relevant for depth) of images
+                if img_array.ndim == 3:
+                    img_array = np.expand_dims(img_array, axis=0)  # [1, slice, H, W]
                 
                 # Convert to float32 tensor
                 data['images'][img_type] = torch.tensor(img_array, dtype=torch.float32)
@@ -272,6 +277,13 @@ class LGEDataset():
         Fucntion that retrieves a dataset based on the idx or the dataset
 
         Uses specifically the datatype to disambiguuate the method for accessing
+
+
+
+        Returns dict: {'patient_id': (id), 'label': torch.Tensor(), 'dataset': 0} 
+
+
+        dataset = {'cine': torch dataset , torch. numpy
         """
         # Get the patient ID for this index
         if isinstance(idx, int): 
@@ -299,7 +311,7 @@ def main():
     dataset_dict = create_label_tensors()
     dataset = LGEDataset(dataset_dict)
 
-
+    breakpoint()
 
 if __name__ == '__main__':
     main()

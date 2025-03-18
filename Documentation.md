@@ -89,6 +89,25 @@ y = 87.4
 
 
 
+# Redesigning the network to accomodate shapes 
+- seems better to use a sliding convolution approach? 
+- process them all at the same time? 
+- whata about with different images slices?  --> this problem is exactly about how I could even know where I am on vertical axis, 
+like the simplest case of this is if i have multiple lines, *I need* some sort of consistent reference point on every image to indicate
+whjere the bottom of the mask is such that I can then know where the images are.
+
+- "where is the bottom of the heart?", where is the top of the heart? -- these are never actually precise
+- here in the slices, i really make heuristic assumptions about the ordinality of the slices as direclty correspondent to the scale of where i am slice wise into the heart
+- i am right - to have a full anatomical picture encoding to the model is very hard (it can become confused about the ordering - maybe then i shoudl
+- have a head that "sees" the images without consideration, and then makes an evaluative judgement only on the ordering information
+
+
+
+- considerations about orientation? need to model the issue here?
+- 
+
+
+
 # Personal + Developmental Considerations made
 - I made heavy use of a Makefile as a important tool for allowing the execuution of complex commands while
 - I learaned how to use python package environments, docker containers (learning to export env variables + forward internal gui things) to the outside so that I can on my side be able to analyze and interface with data so that *I* can evaluate if the dataset is working asa intended + getting other bits of information (I can reduce information uncertainty of multiple variables)

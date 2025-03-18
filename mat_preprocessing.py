@@ -152,7 +152,7 @@ def resize_volume(img, ex=size):              ### THIS IS CURRENTLY OPERATING ON
 
 ''' Initialize all variables to start saving '''
 
-path= './data/Matlab/'
+path= './data/Matlab/' # TODO: Find out if this is useful or not
 subjects= os.listdir(path)
 si = 0
 yes_save = 1
@@ -170,11 +170,11 @@ def saver(si):
 
     new_path= path+subjects[si]
     files= os.listdir(new_path)
-
     for fs in files:
         # slicer= (75, 175, 45, 145)  ### if you want to manually crop the images
         if 'PSIR' in fs or 'LGE' in fs or 'MAG' in fs:
             flge= sio.loadmat(new_path+'/'+fs)
+
             try:
                 __ = flge['series_type']
             except:
@@ -202,13 +202,178 @@ def saver(si):
                         print('couldnt get lv_epi skipping')
                         continue
 
+                    """
+                    Rotation Section Added
+                    """
+                            
 
+                    # flge['rv_insertion'][0][slice_no][0][0][0][0].shape 
+                     # Right before the mask creation:
+                    # Access RV insertion point
+
+                    try:
+                        rv_insertion = flge['rv_insertion'][0][slice_no][0][0][0][0]  # Shape (2,) with [x, y] coordinates
+
+                    except:
+                        print("couldn't get the rv insertion point")
+                        continue
+
+
+                    # Find LV center from endocardial contour
+                    lv_contour = flge['lv_endo'][0][slice_no][0][0][0]
+                    lv_center = np.mean(lv_contour, axis=0)  # [x, y] format
+
+                    # Calculate current angle of RV insertion relative to center
+                    current_angle = np.arctan2(rv_insertion[1] - lv_center[1], 
+                                              rv_insertion[0] - lv_center[0])
+
+                    # Define target angle (e.g., 90 degrees or π/2 radians)
+                    target_angle = np.pi/2  # Or any other standardized angle
+                    rotation_angle = (target_angle - current_angle) * -1 # empimrically realized an anti rotation  
+                    rotation_angle_degrees = np.degrees(rotation_angle)
+
+                    # Import necessary functions
+                    from scipy.ndimage import rotate, shift
+
+                    # For the image, we need a special approach to rotate around a specific center:
+                    raw_image = flge['raw_image'][0,slice_no]
+                    img_center = np.array(raw_image.shape) / 2  # Center of image (y, x)
+                    offset = img_center - np.array([lv_center[1], lv_center[0]])  # Offset from image center to LV center (y, x)
+
+                    # 1. Shift to center the LV center
+                    centered_image = shift(raw_image, offset)
+                    # 2. Rotate around image center
+                    rotated_image = rotate(centered_image, rotation_angle_degrees, reshape=False, order=1)
+                    # 3. Shift back
+                    rotated_raw_image = shift(rotated_image, -offset)
+
+                    # Create rotation function for contours
+                    def rotate_contour(points, center, angle_degrees):
+                        """Rotate points around center by angle in degrees."""
+                        angle_rad = np.radians(angle_degrees)
+                        # Center the points
+                        centered_points = points - center
+                        # Create rotation matrix
+                        cos_angle = np.cos(angle_rad)
+                        sin_angle = np.sin(angle_rad)
+                        rotation_matrix = np.array([
+                            [cos_angle, -sin_angle],
+                            [sin_angle, cos_angle]
+                        ])
+                        # Apply rotation and un-center
+                        rotated_points = np.dot(centered_points, rotation_matrix.T) + center
+                        return rotated_points
+
+                    # Rotate contours
+                    rotated_endo = rotate_contour(flge['lv_endo'][0][slice_no][0][0][0], lv_center, rotation_angle_degrees)
+                    rotated_epi = rotate_contour(flge['lv_epi'][0][slice_no][0][0][0], lv_center, rotation_angle_degrees)
+                   
+
+
+                    # Replace originals with rotated versions
+                    flge['raw_image'][0,slice_no] = rotated_raw_image
+                    flge['lv_endo'][0][slice_no][0][0][0] = rotated_endo
+                    flge['lv_epi'][0][slice_no][0][0][0] = rotated_epi
+
+                    # Now proceed with your existing code - no changes needed
+                    img_shape = np.transpose(flge['raw_image'][0,slice_no]).shape
+                    myo_seg_endo = tomni.make_mask.make_mask_contour(img_shape, flge['lv_endo'][0][slice_no][0][0][0])
+                    myo_seg_epi = tomni.make_mask.make_mask_contour(img_shape, flge['lv_epi'][0][slice_no][0][0][0])                   
+
+
+                    def debug_plt_show():
+                        """
+                        Debug function to visualize original and rotated images with center points and RV insertion.
+                        Call this function in pdb to compare the images before and after rotation.
+                        """
+                        import matplotlib.pyplot as plt
+                        from copy import deepcopy
+                        
+                        # Create a figure with two subplots side by side
+                        fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+                        
+                        # Get the original image and contours (we need to store these before rotation)
+                        # Make deep copies to ensure we don't modify the originals
+                        original_image = deepcopy(raw_image)
+                        original_endo = deepcopy(flge['lv_endo'][0][slice_no][0][0][0])
+                        original_epi = deepcopy(flge['lv_epi'][0][slice_no][0][0][0])
+                        original_center = np.mean(original_endo, axis=0)  # [x, y] format
+                        
+                        # Left subplot - Original image
+                        axes[0].imshow(original_image, cmap='gray')
+                        axes[0].plot(original_endo[:, 0], original_endo[:, 1], 'r-', linewidth=1)  # Endocardial contour
+                        axes[0].plot(original_epi[:, 0], original_epi[:, 1], 'b-', linewidth=1)    # Epicardial contour
+                        
+                        # Plot center of mass and RV insertion point on original image
+                        axes[0].plot(original_center[0], original_center[1], 'go', markersize=8)  # LV center as green dot
+                        axes[0].plot(rv_insertion[0], rv_insertion[1], 'yo', markersize=8)        # RV insertion as yellow dot
+                        
+                        # Draw a line from LV center to RV insertion to visualize current angle
+                        axes[0].plot([original_center[0], rv_insertion[0]], 
+                                     [original_center[1], rv_insertion[1]], 'y-', linewidth=2)
+                        
+                        # Add title and angle info to original image
+                        axes[0].set_title(f'Original Image\nRV Insertion Angle: {np.degrees(current_angle):.1f}°')
+                        
+                        # Right subplot - Rotated image
+                        axes[1].imshow(rotated_raw_image, cmap='gray')
+                        axes[1].plot(rotated_endo[:, 0], rotated_endo[:, 1], 'r-', linewidth=1)  # Rotated endocardial contour
+                        axes[1].plot(rotated_epi[:, 0], rotated_epi[:, 1], 'b-', linewidth=1)    # Rotated epicardial contour
+                        
+                        # Get rotated center and plot it
+                        rotated_center = np.mean(rotated_endo, axis=0)  # [x, y] format
+                        axes[1].plot(rotated_center[0], rotated_center[1], 'go', markersize=8)  # LV center as green dot
+                        
+                        # Calculate the expected position of RV insertion after rotation
+                        rotated_rv = rotate_contour(np.array([rv_insertion]), lv_center, rotation_angle_degrees)[0]
+                        axes[1].plot(rotated_rv[0], rotated_rv[1], 'yo', markersize=8)  # Rotated RV insertion as yellow dot
+                        
+                        # Draw a line from rotated LV center to rotated RV insertion
+                        axes[1].plot([rotated_center[0], rotated_rv[0]], 
+                                     [rotated_center[1], rotated_rv[1]], 'y-', linewidth=2)
+                        
+                        # Calculate the new angle after rotation
+                        new_angle = np.arctan2(rotated_rv[1] - rotated_center[1], 
+                                              rotated_rv[0] - rotated_center[0])
+                        
+                        # Add title and angle info to rotated image
+                        axes[1].set_title(f'(Deprecated) Rotated Image\nRV Insertion Angle: {np.degrees(new_angle):.1f}°\nTarget Angle: {np.degrees(target_angle):.1f}°')
+                        
+                        # Add legend
+                        from matplotlib.lines import Line2D
+                        legend_elements = [
+                            Line2D([0], [0], color='r', lw=1, label='Endocardium'),
+                            Line2D([0], [0], color='b', lw=1, label='Epicardium'),
+                            Line2D([0], [0], marker='o', color='g', label='LV Center', markersize=8, linestyle='None'),
+                            Line2D([0], [0], marker='o', color='y', label='RV Insertion', markersize=8, linestyle='None')
+                        ]
+                        fig.legend(handles=legend_elements, loc='lower center', ncol=4)
+                        
+                        # Adjust layout
+                        plt.tight_layout()
+                        plt.subplots_adjust(bottom=0.15)  # Make room for the legend
+                        
+                        # Show the plot
+                        plt.show()
+
+                    #12272 slice 0 - opposite rotation erro
+
+                    if subjects[si] == '8687' and slice_no == 0:
+                        continue
+                        breakpoint() #TODO: verify that the rotation is property working andd no errors
+                        #TODO: Document Why the rotation is working the opposite direction
                     
+
+
+
                     img_shape= np.transpose(flge['raw_image'][0,slice_no]).shape
+
                     myo_seg_endo= tomni.make_mask.make_mask_contour(img_shape, 
                                                                     flge['lv_endo'][0][slice_no][0][0][0])    ### CONVERT CONTOURS TO BINARY MASKS
                     myo_seg_epi= tomni.make_mask.make_mask_contour(img_shape,
                                                                 flge['lv_epi'][0][slice_no][0][0][0])         ### CONVERT CONTOURS TO BINARY MASKS
+
+                    # TODO: figure out a way to flip the contoour shape, or add data for encoding. 
                     myo_seg= (myo_seg_epi - myo_seg_endo).astype('float')
                     flge['raw_image'][0,slice_no]/=np.amax(flge['raw_image'][0,slice_no])
                     myo_seg[myo_seg==0]= np.nan
@@ -233,20 +398,7 @@ def saver(si):
                     sc2 = (std_img(np.array(scar_im.crop(im.getbbox()))))   ## cropped lge segmentation
                     sc2 = resize_volume(sc2)
 
-                    ''' Use this to visualize the results being stored '''
-                    # sc2[sc2==0]=np.nan
-                    # im2[im2==0]=np.nan
-                    # im2[im2==0]=np.nan
-                    # plt.imshow(imc, cmap='gray')
-                    # plt.plot(flge['lv_endo'][0][slice_no][0][0][0][:,0], flge['lv_endo'][0][slice_no][0][0][0][:,1])
-                    # plt.plot(flge['lv_epi'][0][slice_no][0][0][0][:,0], flge['lv_epi'][0][slice_no][0][0][0][:,1])
-                    # plt.imshow(myo_seg, cmap='gray')
-                    # plt.colorbar()
-                    # plt.imshow(sc2, cmap='jet')
-                    # plt.imshow(imc_full, cmap='gray')
-                    # plt.show()
-                    # # plt.colorbar()
-                    # plt.axis('off')
+
 
                     if yes_save:
                         
