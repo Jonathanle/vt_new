@@ -60,7 +60,7 @@ enable_x11_forwarding:
 
 
 #
-docker_run: enable_x11_forwarding
+docker_run: enable_x11_forwarding #(change this as relevant to allow for running of program)
 	sudo docker run \
 		--gpus $(GPU_FLAG) \
 		-v $(HOST_DIR):$(CONTAINER_WORKDIR) \

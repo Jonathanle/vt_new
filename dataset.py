@@ -285,14 +285,19 @@ class LGEDataset():
 
         dataset = {'cine': torch dataset , torch. numpy
         """
+
+
+
         # Get the patient ID for this index
-        if isinstance(idx, int): 
+        if isinstance(idx, (int, np.integer)):
             patient_id = self.patient_ids[idx]
         
         elif isinstance(idx, str): 
             patient_id = int(idx)  # use str to then inform of the idness
         else: 
-            raise Exception("error idx is not an int or str)")
+
+            breakpoint()
+            raise Exception(f"error idx is not an int or str) type: {type(idx)}")
         
 
 
@@ -306,6 +311,7 @@ class LGEDataset():
             'images': data['images']
         }
 
+
 def main(): 
 
     dataset_dict = create_label_tensors()
@@ -314,4 +320,8 @@ def main():
     breakpoint()
 
 if __name__ == '__main__':
+
     main()
+
+
+
