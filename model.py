@@ -1,10 +1,7 @@
 """
 TODO:
 Create a model that evaluates the risk of a patient with VA, 
-
 Input (
-
-
 """
 # feelings - without this higher leve conscoius, less executive capacity at the level, conscoiusness is not only associated with a higher level but it feelas thaata there is aa dimension of executiveness that it has alongside being more associated with a lower temporal frame.
 # a "contextual" frame???
@@ -25,6 +22,19 @@ class VANet(nn.Module):
             fc_dims (list): List of hidden dimensions for fully connected layers
             output_dim (int): Dimension of the output
         """
+        """
+        TODO: Investigate changes in the model for preventing overfitting in the dataset
+        - can i reduce kernel size so that I have more dimensions? 
+
+
+        - TODO - investigate how model processes the slices
+
+
+
+        """
+
+
+
         super(VANet, self).__init__()
         
         # Convolutional layers for processing each slice
@@ -38,7 +48,6 @@ class VANet(nn.Module):
             nn.MaxPool2d(2)
         ))
         
-        # Additional convolutional layers
         for i in range(len(hidden_dims) - 1):
             self.conv_layers.append(nn.Sequential(
                 nn.Conv2d(hidden_dims[i], hidden_dims[i+1], kernel_size=3, padding=1),
@@ -46,7 +55,9 @@ class VANet(nn.Module):
                 nn.ReLU(),
                 nn.MaxPool2d(2)
             ))
-        
+
+
+
         # Calculate the size of flattened features after convolutions
         # After 3 max pooling layers with stride 2, a 128x128 image becomes 16x16
         flattened_size = hidden_dims[-1] * (128 // (2 ** len(hidden_dims))) * (128 // (2 ** len(hidden_dims)))

@@ -14,10 +14,15 @@
 2. Preprocess data into format that is clear and useful
 
 
-
 # Details on the Preprocessing Flow 
 - Given Images + Preprocessor, devise method such that at that state of "I have method" *I*  can call algorithm to transform the images into a representation such that Segmentation Model can Run through
 - consider ideas related to bootstrapping explanation related to importing matfiles + using pd to import xlsx files
+
+
+# TODOs: 
+- Get a new validaiton flow
+
+# Misc
 
 
 # From the Images and its format, there is 
@@ -30,3 +35,5 @@
 ## Application Specific Problems needed to run 
 
 `xhost +local:` --> i need to run this every time on locall - TODO: how can i auto run this the best? basahrdc seems 
+
+

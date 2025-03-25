@@ -1,4 +1,6 @@
-
+"""
+Function to help isolate and test a working directory structure and project structure
+"""
 def main(): 
     print("hello world!")
 

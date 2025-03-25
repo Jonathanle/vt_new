@@ -472,7 +472,6 @@ def main():
     dataset = training_config.get_dataset()
 
     # testing quickly to see if i have a dataloader working
-
     # implies that we have a single batch? what is the size of the batches? 
 
     # I need to have a new thing? why is it then that i only have 1 element in the batch?

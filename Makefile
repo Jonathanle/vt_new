@@ -55,6 +55,9 @@ test:
 	$(TEST_LIBRARY)	
 
 
+visualize_data:
+	python3 -m utils.visualizer
+
 enable_x11_forwarding: 
 	xhost +local:
 
